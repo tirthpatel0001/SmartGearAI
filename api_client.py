@@ -37,3 +37,55 @@ def admin_reject(token: str, user_id: int):
 def admin_get_heads(token: str):
     headers = {"Authorization": f"Bearer {token}"}
     return requests.get(f"{API_URL}/admin/heads", headers=headers)
+
+
+# SCM / inventory helpers
+
+def get_inventory_items(token: str):
+    headers = {"Authorization": f"Bearer {token}"}
+    return requests.get(f"{API_URL}/inventory/items", headers=headers)
+
+
+def create_inventory_item(token: str, data: dict):
+    headers = {"Authorization": f"Bearer {token}"}
+    return requests.post(f"{API_URL}/inventory/items", json=data, headers=headers)
+
+
+def get_material_requests(token: str):
+    headers = {"Authorization": f"Bearer {token}"}
+    return requests.get(f"{API_URL}/material_requests", headers=headers)
+
+
+def create_material_request(token: str, data: dict):
+    headers = {"Authorization": f"Bearer {token}"}
+    return requests.post(f"{API_URL}/material_requests", json=data, headers=headers)
+
+
+def get_purchase_requests(token: str):
+    headers = {"Authorization": f"Bearer {token}"}
+    return requests.get(f"{API_URL}/purchase_requests", headers=headers)
+
+
+def create_purchase_request(token: str, data: dict):
+    headers = {"Authorization": f"Bearer {token}"}
+    return requests.post(f"{API_URL}/purchase_requests", json=data, headers=headers)
+
+
+def get_purchase_orders(token: str):
+    headers = {"Authorization": f"Bearer {token}"}
+    return requests.get(f"{API_URL}/purchase_orders", headers=headers)
+
+
+def create_purchase_order(token: str, data: dict):
+    headers = {"Authorization": f"Bearer {token}"}
+    return requests.post(f"{API_URL}/purchase_orders", json=data, headers=headers)
+
+
+def get_scrap_records(token: str):
+    headers = {"Authorization": f"Bearer {token}"}
+    return requests.get(f"{API_URL}/scrap_records", headers=headers)
+
+
+def create_scrap_record(token: str, data: dict):
+    headers = {"Authorization": f"Bearer {token}"}
+    return requests.post(f"{API_URL}/scrap_records", json=data, headers=headers)

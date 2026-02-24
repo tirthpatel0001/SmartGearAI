@@ -229,7 +229,10 @@ def login_page():
                         st.session_state.logged_in = True
                         st.session_state.token = data.get("access_token")
                         st.session_state.username = data.get("user", {}).get("username")
+                        st.session_state.email = data.get("user", {}).get("email")
                         st.session_state.role = data.get("user", {}).get("role", "user")
+                        # store id for future API calls
+                        st.session_state.user_id = data.get("user", {}).get("id")
                         st.success("✅ Login successful! Redirecting...")
                         _safe_rerun()
                     else:
@@ -269,12 +272,28 @@ def login_page():
         
         col1, col2 = st.columns(2)
         with col1:
-            role = st.selectbox(
+            parent_role = st.selectbox(
                 "Role",
-                ["user", "inventory_head", "maintenance_head", "production_head"],
+                [
+                    "user",
+                    "inventory_head",
+                    "maintenance_head",
+                    "production_head",
+                    "scm",
+                ],
                 index=0,
-                key="signup_role"
+                key="signup_parent_role"
             )
+            # if user chooses SCM as the top‑level role, ask for the subrole
+            if parent_role == "scm":
+                role = st.selectbox(
+                    "SCM Subrole",
+                    ["scm_head", "scm_planner", "scm_purchaser"],
+                    index=0,
+                    key="signup_subrole"
+                )
+            else:
+                role = parent_role
         
         with col2:
             st.write("")

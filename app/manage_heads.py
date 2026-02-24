@@ -46,6 +46,9 @@ def display_manage_heads():
             'inventory_head': {'label': '📦 Inventory Heads', 'icon': '📦', 'count': 0},
             'maintenance_head': {'label': '🔧 Maintenance Heads', 'icon': '🔧', 'count': 0},
             'production_head': {'label': '⚙️ Production Heads', 'icon': '⚙️', 'count': 0},
+            'scm_head': {'label': '🗂 SCM Heads', 'icon': '🗂', 'count': 0},
+            'scm_planner': {'label': '📝 SCM Planners', 'icon': '📝', 'count': 0},
+            'scm_purchaser': {'label': '📦 SCM Purchasers', 'icon': '📦', 'count': 0},
         }
         
         for head in heads:
@@ -53,6 +56,7 @@ def display_manage_heads():
                 roles_dict[head['role']]['count'] += 1
         
         # Summary metrics
+        # display first row of three
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("📦 Inventory", roles_dict['inventory_head']['count'])
@@ -60,6 +64,15 @@ def display_manage_heads():
             st.metric("🔧 Maintenance", roles_dict['maintenance_head']['count'])
         with col3:
             st.metric("⚙️ Production", roles_dict['production_head']['count'])
+        # second row for SCM roles
+        st.markdown("---")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("🗂 SCM Heads", roles_dict['scm_head']['count'])
+        with col2:
+            st.metric("📝 SCM Planners", roles_dict['scm_planner']['count'])
+        with col3:
+            st.metric("📦 SCM Purchasers", roles_dict['scm_purchaser']['count'])
         
         st.markdown("---")
         

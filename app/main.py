@@ -1037,19 +1037,24 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.markdown("### 🗺️ Navigation")
+    st.markdown("### �️ Navigation")
 
+    role = st.session_state.get('role', 'guest')
     nav_items = [
         ("🏠 Home", "Home"),
     ]
-
-    role = st.session_state.get('role', 'guest')
+    if role != 'guest':
+        nav_items.append(("🔔 Notifications", "Notifications"))
 
     # Role-based navigation
     if role == 'user':
         nav_items.append(("💰 Price Prediction", "Price Prediction"))
     elif role == 'inventory_head':
-        nav_items.append(("🖼️ Quality Detection", "Quality Detection"))
+        nav_items.extend([
+            ("🖼️ Quality Detection", "Quality Detection"),
+            ("📋 Inventory", "Inventory"),
+            ("✓ Approve Requests", "Approve Requests"),
+        ])
     elif role == 'maintenance_head':
         nav_items.append(("⚙️ Gearbox Diagnosis", "Gearbox Diagnosis"))
     elif role == 'production_head':
@@ -1057,6 +1062,24 @@ with st.sidebar:
             ("🖼️ Quality Detection", "Quality Detection"),
             ("💰 Price Prediction", "Price Prediction"),
             ("⚙️ Gearbox Diagnosis", "Gearbox Diagnosis"),
+            ("📝 Material Request", "Material Request"),
+        ])
+    elif role == 'scm_head':
+        nav_items.extend([
+            ("🛒 SCM Dashboard", "SCM Dashboard"),
+            ("📋 Inventory", "Inventory"),
+        ])
+    elif role == 'scm_planner':
+        # planner can view dashboard to see material requests and create PRs
+        nav_items.extend([
+            ("🛒 SCM Dashboard", "SCM Dashboard"),
+            ("📝 Purchase Requests", "Purchase Requests"),
+        ])
+    elif role == 'scm_purchaser':
+        # purchaser needs access to both PR list (to see what to order) and POs
+        nav_items.extend([
+            ("📝 Purchase Requests", "Purchase Requests"),
+            ("📦 Purchase Orders", "Purchase Orders"),
         ])
     elif role == 'admin':
         nav_items.extend([
@@ -1111,6 +1134,35 @@ elif current == "Admin Requests":
 elif current == "Manage Heads":
     from manage_heads import display_manage_heads
     display_manage_heads()
+
+elif current == "SCM Dashboard":
+    # inventory head / scm_head sees overall workflow
+    from scm_chain import display_scm_dashboard
+    display_scm_dashboard()
+
+elif current == "Inventory":
+    from scm_chain import display_inventory_management
+    display_inventory_management()
+
+elif current == "Material Request":
+    from scm_chain import display_production_requests
+    display_production_requests()
+
+elif current == "Notifications":
+    from scm_chain import display_notifications
+    display_notifications()
+
+elif current == "Purchase Requests":
+    from scm_chain import display_purchase_requests
+    display_purchase_requests()
+
+elif current == "Purchase Orders":
+    from scm_chain import display_purchase_orders
+    display_purchase_orders()
+
+elif current == "Approve Requests":
+    from inventory_manager import display_approve_requests
+    display_approve_requests()
     
 # ==================== FOOTER ====================
 st.markdown("---")
