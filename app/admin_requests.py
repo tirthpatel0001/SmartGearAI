@@ -44,7 +44,11 @@ def display_pending_requests():
                 with col1:
                     st.write(f"**{u['email']}**")
                 with col2:
-                    role_badge = f"<span style='background: #667eea; color: white; padding: 3px 8px; border-radius: 3px; font-size: 0.9em;'>{u['role']}</span>"
+                    # friendly label for legacy role
+                    role_display = u['role']
+                    if role_display == 'scm':
+                        role_display = 'SCM (legacy)'
+                    role_badge = f"<span style='background: #667eea; color: white; padding: 3px 8px; border-radius: 3px; font-size: 0.9em;'>{role_display}</span>"
                     st.markdown(role_badge, unsafe_allow_html=True)
                 with col3:
                     if st.button('✅ Approve', key=f"approve_{u['id']}", use_container_width=True):

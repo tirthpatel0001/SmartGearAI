@@ -83,11 +83,13 @@ with st.sidebar:
                 st.session_state.token = None
                 st.session_state.username = None
                 st.session_state.role = None
+                st.session_state.current_tab = "Home"
                 _safe_rerun()
     else:
         if st.button("🚪 Logout", use_container_width=True):
             st.session_state.logged_in = False
             st.session_state.token = None
+            st.session_state.current_tab = "Home"
             _safe_rerun()
 
 # ==================== CUSTOM CSS ====================
@@ -783,6 +785,7 @@ def display_admin_panel():
             st.session_state.token = None
             st.session_state.role = 'guest'
             st.session_state.admin_authenticated = False
+            st.session_state.current_tab = "Home"
             st.experimental_rerun()
     
     st.markdown("---")
@@ -1058,12 +1061,8 @@ with st.sidebar:
     elif role == 'maintenance_head':
         nav_items.append(("⚙️ Gearbox Diagnosis", "Gearbox Diagnosis"))
     elif role == 'production_head':
-        nav_items.extend([
-            ("🖼️ Quality Detection", "Quality Detection"),
-            ("💰 Price Prediction", "Price Prediction"),
-            ("⚙️ Gearbox Diagnosis", "Gearbox Diagnosis"),
-            ("📝 Material Request", "Material Request"),
-        ])
+        # production heads only need the material request feature
+        nav_items.append(("📝 Material Request", "Material Request"))
     elif role == 'scm_head':
         nav_items.extend([
             ("🛒 SCM Dashboard", "SCM Dashboard"),

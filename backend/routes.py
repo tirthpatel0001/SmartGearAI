@@ -67,6 +67,9 @@ def auth_signup():
         return jsonify({'error': 'user exists'}), 409
 
     # New users with roles other than 'user' require admin approval
+    # treat generic "scm" as an alias for scm_head for future compatibility
+    if role == 'scm':
+        role = 'scm_head'
     approved = True if role == 'user' else False
     user = User(username=username, email=email, role=role, is_approved=approved)
     user.set_password(password)
@@ -93,16 +96,21 @@ def auth_login():
     if user.role != 'user' and not user.is_approved:
         return jsonify({'error': 'account pending approval'}), 403
 
+    # backward compatibility: convert legacy 'scm' role into scm_head privileges
+    return_role = user.role
+    if return_role == 'scm':
+        return_role = 'scm_head'
+
     payload = {
         'sub': str(user.id),
         'username': user.username,
-        'role': user.role,
+        'role': return_role,
         'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
     }
     token = jwt.encode(payload, Config.JWT_SECRET_KEY, algorithm=Config.JWT_ALGORITHM)
 
     user_data = user.as_dict()
-    user_data['role'] = user.role
+    user_data['role'] = return_role
     user_data['is_approved'] = user.is_approved
 
     return jsonify({'access_token': token, 'user': user_data})
@@ -183,13 +191,15 @@ def admin_heads():
         return jsonify({'error': 'admin required'}), 403
 
     # include scm head/planner/purchaser when listing department heads
+    # include legacy 'scm' as well so existing accounts show up
     roles_to_include = [
         'inventory_head',
         'maintenance_head',
         'production_head',
         'scm_head',
         'scm_planner',
-        'scm_purchaser'
+        'scm_purchaser',
+        'scm'
     ]
     heads = User.query.filter(User.role.in_(roles_to_include)).all()
     return jsonify([{
@@ -218,7 +228,8 @@ def create_inventory_item():
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role not in ('inventory_head', 'scm_head'):
+    # legacy 'scm' role treated as an SCM head
+    if user.role not in ('inventory_head', 'scm_head', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
 
     data = request.get_json() or {}
@@ -266,7 +277,7 @@ def list_material_requests():
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role not in ('inventory_head', 'scm_head', 'production_head', 'scm_planner'):
+    if user.role not in ('inventory_head', 'scm_head', 'scm', 'production_head', 'scm_planner'):
         return jsonify({'error': 'insufficient permissions'}), 403
     reqs = MaterialRequest.query.all()
     return jsonify([r.as_dict() for r in reqs])
@@ -391,7 +402,8 @@ def process_material_request(req_id):
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role not in ('inventory_head', 'scm_head'):
+    # allow legacy scm role as equivalent to scm_head
+    if user.role not in ('inventory_head', 'scm_head', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
 
     mr = MaterialRequest.query.get(req_id)
@@ -452,7 +464,8 @@ def list_purchase_requests():
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role not in ('scm_planner', 'scm_head', 'scm_purchaser'):
+    # legacy role 'scm' treated as broad SCM privilege
+    if user.role not in ('scm_planner', 'scm_head', 'scm_purchaser', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
     prs = PurchaseRequest.query.all()
     return jsonify([p.as_dict() for p in prs])
@@ -464,7 +477,7 @@ def list_assigned_purchase_requests():
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role != 'scm_purchaser':
+    if user.role not in ('scm_purchaser', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
     # Get PRs where purchaser_email matches the logged-in user's email
     prs = PurchaseRequest.query.filter_by(purchaser_email=user.email).all()
@@ -477,7 +490,8 @@ def create_purchase_request():
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role not in ('scm_planner', 'scm_head'):
+    # a legacy scm user should also be allowed to act like a head
+    if user.role not in ('scm_planner', 'scm_head', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
 
     data = request.get_json() or {}
@@ -529,7 +543,8 @@ def submit_purchase_request(pr_id):
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role not in ('scm_planner', 'scm_head'):
+    # include generic scm user
+    if user.role not in ('scm_planner', 'scm_head', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
 
     pr = PurchaseRequest.query.get(pr_id)
@@ -548,7 +563,8 @@ def delete_purchase_request(pr_id):
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role not in ('scm_planner', 'scm_head'):
+    # legacy scm role allowed
+    if user.role not in ('scm_planner', 'scm_head', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
 
     pr = PurchaseRequest.query.get(pr_id)
@@ -566,7 +582,8 @@ def delete_all_purchase_requests():
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role not in ('scm_planner', 'scm_head'):
+    # treat legacy scm as admin planner/head
+    if user.role not in ('scm_planner', 'scm_head', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
 
     prs = PurchaseRequest.query.all()
@@ -582,7 +599,8 @@ def update_purchase_request_status(pr_id):
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role not in ('scm_planner', 'scm_head', 'scm_purchaser'):
+    # generic scm also able to update status
+    if user.role not in ('scm_planner', 'scm_head', 'scm_purchaser', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
 
     pr = PurchaseRequest.query.get(pr_id)
@@ -608,7 +626,7 @@ def list_purchase_orders():
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role not in ('scm_purchaser', 'scm_head', 'scm_planner'):
+    if user.role not in ('scm_purchaser', 'scm_head', 'scm_planner', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
     pos = PurchaseOrder.query.all()
     return jsonify([p.as_dict() for p in pos])
@@ -620,7 +638,8 @@ def create_purchase_order():
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role not in ('scm_purchaser', 'scm_head'):
+    # legacy scm users treated as head/purchaser
+    if user.role not in ('scm_purchaser', 'scm_head', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
 
     data = request.get_json() or {}
@@ -654,7 +673,8 @@ def receive_purchase_order(po_id):
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role not in ('scm_purchaser', 'scm_head'):
+    # legacy scm also allowed to receive orders
+    if user.role not in ('scm_purchaser', 'scm_head', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
 
     po = PurchaseOrder.query.get(po_id)
@@ -700,7 +720,8 @@ def list_scrap_records():
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    if user.role not in ('inventory_head', 'production_head', 'scm_head', 'scm_planner'):
+    # treat legacy scm role as allowed
+    if user.role not in ('inventory_head', 'production_head', 'scm_head', 'scm_planner', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
     recs = ScrapRecord.query.all()
     return jsonify([r.as_dict() for r in recs])
@@ -712,8 +733,8 @@ def create_scrap_record():
     user = _require_admin_from_token()
     if not user:
         return jsonify({'error': 'authentication required'}), 401
-    # allow inventory_head, production_head, scm_head, scm_planner
-    if user.role not in ('inventory_head', 'production_head', 'scm_head', 'scm_planner'):
+    # allow inventory_head, production_head, scm_head, scm_planner (and legacy scm)
+    if user.role not in ('inventory_head', 'production_head', 'scm_head', 'scm_planner', 'scm'):
         return jsonify({'error': 'insufficient permissions'}), 403
 
     data = request.get_json() or {}

@@ -165,6 +165,34 @@ elif signup_pl.status_code == 409:
     if resp_pl.status_code == 200:
         planner_token = resp_pl.json().get('access_token')
 
+# also ensure we can create and approve a dedicated scm_head user (legacy admin)
+print("\n   creating an scm_head user for testing...")
+signup_head = requests.post(f"{BASE_URL}/auth/signup", json={
+    "username": "head@example.com",
+    "email": "head@example.com",
+    "password": "secret",
+    "role": "scm_head"
+}, headers=headers)
+print(f"   signup head response: {signup_head.status_code} -> {signup_head.text}")
+head_token = None
+if signup_head.status_code == 201:
+    hid = signup_head.json().get('user', {}).get('id')
+    appr_h = requests.post(f"{BASE_URL}/admin/approve/{hid}", headers=headers)
+    print(f"   approve head user: {appr_h.status_code}")
+    resp_h = requests.post(f"{BASE_URL}/auth/login", json={
+        "username": "head@example.com",
+        "password": "secret"
+    })
+    if resp_h.status_code == 200:
+        head_token = resp_h.json().get('access_token')
+elif signup_head.status_code == 409:
+    resp_h = requests.post(f"{BASE_URL}/auth/login", json={
+        "username": "head@example.com",
+        "password": "secret"
+    })
+    if resp_h.status_code == 200:
+        head_token = resp_h.json().get('access_token')
+
 # create an scm_purchaser user so we can verify they receive submitted PRs
 print("\n   creating an scm_purchaser user for testing...")
 signup_pc = requests.post(f"{BASE_URL}/auth/signup", json={

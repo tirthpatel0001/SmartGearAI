@@ -49,6 +49,7 @@ def display_manage_heads():
             'scm_head': {'label': '🗂 SCM Heads', 'icon': '🗂', 'count': 0},
             'scm_planner': {'label': '📝 SCM Planners', 'icon': '📝', 'count': 0},
             'scm_purchaser': {'label': '📦 SCM Purchasers', 'icon': '📦', 'count': 0},
+            'scm': {'label': '🗂 SCM (legacy)', 'icon': '🗂', 'count': 0},
         }
         
         for head in heads:
