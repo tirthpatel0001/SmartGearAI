@@ -18,6 +18,13 @@ def create_app(config_object: object = None):
     db.init_app(app)
     Migrate(app, db)
 
+    # Initialize workload analyzer models before serving requests
+    from .modules.workload_analyzer import initialize_models
+    try:
+        initialize_models()
+    except Exception:
+        pass
+
     # Register blueprints
     from .routes import api_bp
 

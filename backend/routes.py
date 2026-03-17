@@ -13,6 +13,18 @@ from .models import (
     Notification,
 )
 from .config import Config
+from .modules import workload_analyzer as workload_analyzer_module
+from .modules.market_sales_forecast import (
+    train_model as train_sales_model,
+    predict_sales as forecast_predict_sales,
+    product_wise_forecast,
+    region_wise_forecast,
+    forecast_insights,
+    detect_anomalies,
+    monthly_history,
+    price_optimization,
+    demand_segmentation,
+)
 import jwt
 import datetime
 
@@ -210,6 +222,105 @@ def admin_heads():
         "is_approved": u.is_approved,
         "created_at": str(u.created_at)
     } for u in heads])
+
+
+@api_bp.route('/forecast/train', methods=['GET'])
+def forecast_train():
+    try:
+        result = train_sales_model()
+        return jsonify(result)
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@api_bp.route('/forecast/predict', methods=['POST'])
+def forecast_predict():
+    data = request.get_json() or {}
+    month = data.get('month')
+    year = data.get('year')
+    gear_type = data.get('gear_type', 'Unknown')
+    region = data.get('region', 'Global')
+    customer_type = data.get('customer_type', 'Retail')
+    if month is None or year is None:
+        return jsonify({'error': 'month and year are required'}), 400
+    try:
+        month = int(month)
+        year = int(year)
+    except ValueError:
+        return jsonify({'error': 'month and year must be numeric integers'}), 400
+    try:
+        prediction = forecast_predict_sales(month, year, gear_type, region, customer_type)
+        return jsonify(prediction)
+    except FileNotFoundError as exc:
+        return jsonify({'error': str(exc)}), 404
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@api_bp.route('/forecast/product-wise', methods=['GET'])
+def forecast_product_wise():
+    try:
+        return jsonify(product_wise_forecast())
+    except FileNotFoundError as exc:
+        return jsonify({'error': str(exc)}), 404
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@api_bp.route('/forecast/region-wise', methods=['GET'])
+def forecast_region_wise():
+    try:
+        return jsonify(region_wise_forecast())
+    except FileNotFoundError as exc:
+        return jsonify({'error': str(exc)}), 404
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@api_bp.route('/forecast/insights', methods=['GET'])
+def forecast_insights_route():
+    try:
+        return jsonify(forecast_insights())
+    except FileNotFoundError as exc:
+        return jsonify({'error': str(exc)}), 404
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@api_bp.route('/forecast/anomaly', methods=['GET'])
+def forecast_anomaly():
+    try:
+        return jsonify(detect_anomalies())
+    except FileNotFoundError as exc:
+        return jsonify({'error': str(exc)}), 404
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@api_bp.route('/forecast/price-optimization', methods=['GET'])
+def forecast_price_optimization():
+    try:
+        return jsonify(price_optimization())
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@api_bp.route('/forecast/demand-segmentation', methods=['GET'])
+def forecast_demand_segmentation():
+    try:
+        return jsonify(demand_segmentation())
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@api_bp.route('/forecast/history', methods=['GET'])
+def forecast_history():
+    try:
+        return jsonify(monthly_history())
+    except FileNotFoundError as exc:
+        return jsonify({'error': str(exc)}), 404
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
 
 
 # ---------------- SCM / Inventory API ----------------
@@ -535,6 +646,45 @@ def read_notification(note_id):
     n.seen = True
     db.session.commit()
     return jsonify(n.as_dict())
+
+
+@api_bp.route('/production/workload-analyzer', methods=['POST'])
+def production_workload_analyzer():
+    user = _require_admin_from_token()
+    if not user:
+        return jsonify({'error': 'authentication required'}), 401
+    if user.role != 'production_head':
+        return jsonify({'error': 'production_head only'}), 403
+
+    data = request.get_json() or {}
+    required = ['gear_type', 'teeth', 'diameter', 'process_steps', 'machine_count', 'current_jobs', 'machine_capacity', 'progress']
+    for field in required:
+        if field not in data:
+            return jsonify({'error': f'{field} is required'}), 400
+    try:
+        result = workload_analyzer_module.predict_workload(data)
+    except Exception as exc:
+        return jsonify({'error': 'prediction failed', 'detail': str(exc)}), 500
+
+    from .models import WorkloadLog
+    try:
+        wl = WorkloadLog(
+            user_id=user.id,
+            teeth=float(data.get('teeth', 0)),
+            diameter=float(data.get('diameter', 0)),
+            process_steps=float(data.get('process_steps', 0)),
+            machine_count=int(result.get('machine_needed', 1)),
+            machine_risk=result.get('machine_risk', 'normal'),
+            predicted_lead_time=float(result.get('lead_time', 0)),
+            adjusted_lead_time=float(result.get('lead_time', 0)),
+            remaining_time=float(result.get('remaining_time', 0)),
+        )
+        db.session.add(wl)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    return jsonify(result), 200
 
 
 @api_bp.route('/purchase_requests/<int:pr_id>/submit', methods=['POST'])

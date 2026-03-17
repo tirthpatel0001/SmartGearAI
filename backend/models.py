@@ -224,3 +224,33 @@ class ScrapRecord(db.Model):
             "status": self.status,
             "created_at": str(self.created_at),
         }
+
+
+class WorkloadLog(db.Model):
+    __tablename__ = "workload_logs"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    teeth = db.Column(db.Float, nullable=False)
+    diameter = db.Column(db.Float, nullable=False)
+    process_steps = db.Column(db.Float, nullable=False)
+    machine_count = db.Column(db.Integer, nullable=False)
+    machine_risk = db.Column(db.String(50), nullable=False)
+    predicted_lead_time = db.Column(db.Float, nullable=False)
+    adjusted_lead_time = db.Column(db.Float, nullable=False)
+    remaining_time = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def as_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "teeth": self.teeth,
+            "diameter": self.diameter,
+            "process_steps": self.process_steps,
+            "machine_count": self.machine_count,
+            "machine_risk": self.machine_risk,
+            "predicted_lead_time": self.predicted_lead_time,
+            "adjusted_lead_time": self.adjusted_lead_time,
+            "remaining_time": self.remaining_time,
+            "created_at": str(self.created_at),
+        }

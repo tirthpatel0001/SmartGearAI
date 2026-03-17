@@ -61,6 +61,83 @@ def _safe_rerun():
             pass
     st.stop()
 
+
+def display_workload_analyzer():
+    st.markdown("## ⚙️ Workload Analyzer (Production Head)")
+    st.write("Use the ML model to predict lead time, machine requirements, and status.")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        gear_type = st.selectbox("Gear Type", ["Spur", "Helical", "Bevel"], index=0)
+    with col2:
+        teeth = st.number_input("Teeth", value=80, min_value=1)
+    with col3:
+        diameter = st.number_input("Diameter", value=180, min_value=1)
+
+    process_steps = st.number_input("Process Steps", value=4, min_value=1)
+    machine_count = st.number_input("Current Machine Count", value=3, min_value=1)
+    current_jobs = st.number_input("Current Jobs", value=5, min_value=0)
+    machine_capacity = st.number_input("Machine Capacity", value=6, min_value=1)
+    progress = st.slider("Progress (%)", min_value=0, max_value=100, value=60)
+
+    st.markdown("### ⚙️ Risk Inputs")
+    air_temp = st.number_input("Air Temperature (K)", value=300.0)
+    process_temp = st.number_input("Process Temperature (K)", value=308.0)
+    rotational_speed = st.number_input("Rotational Speed (rpm)", value=1500.0)
+    torque = st.number_input("Torque (Nm)", value=50.0)
+    tool_wear = st.number_input("Tool Wear (min)", value=5.0)
+
+    if st.button("Analyze Workload"):
+        if not st.session_state.get("token"):
+            st.error("Authentication token missing. Please log in again.")
+            return
+
+        import requests
+        headers = {"Authorization": f"Bearer {st.session_state.token}", "Content-Type": "application/json"}
+        payload = {
+            "gear_type": gear_type,
+            "teeth": teeth,
+            "diameter": diameter,
+            "process_steps": process_steps,
+            "machine_count": machine_count,
+            "current_jobs": current_jobs,
+            "machine_capacity": machine_capacity,
+            "progress": progress,
+            "air_temperature": air_temp,
+            "process_temperature": process_temp,
+            "rotational_speed": rotational_speed,
+            "torque": torque,
+            "tool_wear": tool_wear,
+        }
+        try:
+            resp = requests.post("http://127.0.0.1:5000/api/production/workload-analyzer", json=payload, headers=headers, timeout=20)
+            if resp.status_code != 200:
+                st.error(f"Workload API error {resp.status_code}: {resp.text}")
+            else:
+                data = resp.json()
+                st.success("✅ Workload prediction succeeded")
+                msg = data.get("messages", {})
+                st.markdown("### 🔎 Prediction Summary")
+                st.write(msg.get("lead_time_text", "Lead time unavailable"))
+                st.write(msg.get("machine_requirement_text", "Machine requirement unavailable"))
+                status = msg.get("workload_status", "unknown")
+                status_badge = {
+                    "overloaded": "🔴 Overloaded",
+                    "normal": "🟢 Normal",
+                    "underutilized": "🟡 Underutilized",
+                }.get(status, "⚪ Unknown")
+                st.write(f"### Workload Status: {status_badge}")
+                st.write(msg.get("remaining_time_text", "Remaining time unavailable"))
+
+                st.markdown("### 📊 Numeric Output")
+                st.metric("Lead Time (hrs)", f"{data.get('lead_time', 0):.2f}")
+                st.metric("Remaining Time (hrs)", f"{data.get('remaining_time', 0):.2f}")
+                st.metric("Machine Needed", data.get("machine_needed", 1))
+                st.metric("Machine Risk", data.get("machine_risk", "normal"))
+        except Exception as exc:
+            st.error(f"Error calling backend API: {exc}")
+
+
 with st.sidebar:
     st.markdown("---")
     
@@ -654,7 +731,197 @@ def display_price_prediction():
                 mime="application/pdf",
                 use_container_width=True
             )
-            
+
+
+def display_market_sales_forecast():
+    st.markdown("""
+        <div class='hero-header' style='padding: 30px; margin-bottom: 24px;'>
+            <h1>📈 Market Sales Forecasting</h1>
+            <p>Train and predict monthly sales with historical gear sales data.</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    from pathlib import Path
+    from datetime import datetime
+    import pandas as pd
+
+    csv_path = Path("data/raw/gear_sales_data.csv")
+    df = None
+    if csv_path.exists():
+        try:
+            df = pd.read_csv(csv_path)
+            if "Date" in df.columns:
+                df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+                if "Quantity_Sold" not in df.columns and "Quantity Sold" in df.columns:
+                    df["Quantity_Sold"] = df["Quantity Sold"]
+                if "Quantity_Sold" in df.columns:
+                    df = df.dropna(subset=["Date", "Quantity_Sold"])
+                    df["Month"] = df["Date"].dt.month
+                    df["Year"] = df["Date"].dt.year
+                    df["MonthYear"] = df["Date"].dt.to_period("M").astype(str)
+            else:
+                st.warning("Date column missing in CSV. Forecast graphs are disabled until dataset is fixed.")
+        except Exception:
+            st.warning("Could not parse sales CSV. Forecast graphs may be unavailable.")
+    else:
+        st.warning("Sales dataset not found at data/raw/gear_sales_data.csv")
+
+    # Training and predict controls
+    st.markdown("### 🔧 Forecast Controls")
+    col_train, col_predict = st.columns([1, 2])
+    with col_train:
+        if st.button("Train Forecast Model"):
+            try:
+                import requests
+                r = requests.get("http://127.0.0.1:5000/api/forecast/train", timeout=35)
+                if r.ok:
+                    data = r.json()
+                    st.success("✅ Model trained successfully")
+                    st.write(data)
+                else:
+                    st.error(f"Training failed: {r.status_code} {r.text}")
+            except Exception as exc:
+                st.error(f"Training API error: {exc}")
+
+    with col_predict:
+        pm, py = st.columns(2)
+        month_names = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+        month_name = pm.selectbox("Month", month_names, index=datetime.now().month - 1)
+        year = py.number_input("Year", min_value=2000, max_value=2100, value=datetime.now().year)
+        gear_type = st.selectbox("Gear Type", ["Spur", "Helical", "Bevel"], index=0)
+        region = st.selectbox("Region", ["North", "South", "East", "West"], index=0)
+
+        if st.button("Predict Sales"):
+            try:
+                import requests
+                month_num = month_names.index(month_name) + 1
+                r = requests.post(
+                    "http://127.0.0.1:5000/api/forecast/predict",
+                    json={"month": month_num, "year": int(year), "gear_type": gear_type, "region": region, "customer_type": "Retail"},
+                    timeout=20,
+                )
+                if r.ok:
+                    pred = r.json()
+                    st.session_state.sales_forecast_prediction = pred
+                    st.success("✅ Prediction successful")
+                    st.metric("Predicted Sales", f"{pred.get('predicted_sales', 0):,.2f}")
+                    st.write(f"**Insight:** {pred.get('insight', 'N/A')}")
+                    st.write(f"Average Historical Sales: {pred.get('average_sales', 'N/A')}")
+                    rec = pred.get("recommendation", "N/A")
+                    st.info(f"Inventory Recommendation: {rec}")
+
+                    # Next month forecast
+                    next_month = month_num + 1
+                    next_year = year
+                    if next_month == 13:
+                        next_month = 1
+                        next_year += 1
+                    r2 = requests.post(
+                        "http://127.0.0.1:5000/api/forecast/predict",
+                        json={"month": next_month, "year": next_year, "gear_type": gear_type, "region": region, "customer_type": "Retail"},
+                        timeout=20,
+                    )
+                    if r2.ok:
+                        next_pred = r2.json().get("predicted_sales", None)
+                        if next_pred is not None:
+                            st.success(f"Next month forecast ({month_names[next_month-1]} {next_year}): {next_pred:,.2f}")
+                    else:
+                        st.warning("Could not compute next-month forecast")
+                else:
+                    st.error(f"Prediction failed: {r.status_code} {r.text}")
+            except Exception as exc:
+                st.error(f"Prediction API error: {exc}")
+
+    with st.expander("🔍 Advanced AI Insights: Price Optimization & Demand Segmentation", expanded=False):
+        colA, colB = st.columns(2)
+        with colA:
+            try:
+                rpo = requests.get("http://127.0.0.1:5000/api/forecast/price-optimization", timeout=20)
+                if rpo.ok:
+                    p = rpo.json()
+                    if "error" not in p:
+                        st.markdown("**Price Optimization**")
+                        st.write(f"Price coeff: {p.get('price_coefficient')}, intercept: {p.get('intercept')}")
+                        st.write(p.get('message'))
+                        st.write(f"Optimal price estimate: {p.get('optimal_price_revenue')}")
+                        st.write(f"Expected demand at optimal price: {p.get('optimal_quantity_at_optimal_price')}")
+                    else:
+                        st.warning(p.get('error'))
+                else:
+                    st.warning("Price optimization service unavailable")
+            except Exception:
+                st.warning("Price optimization request failed")
+
+        with colB:
+            try:
+                rseg = requests.get("http://127.0.0.1:5000/api/forecast/demand-segmentation", timeout=20)
+                if rseg.ok:
+                    seg = rseg.json()
+                    if "error" not in seg:
+                        st.markdown("**Demand Segmentation**")
+                        for msg in seg.get("customer_behavior", []):
+                            st.write(f"- {msg}")
+                        for msg in seg.get("segment_summary", []):
+                            st.write(f"- {msg}")
+                    else:
+                        st.warning(seg.get('error'))
+                else:
+                    st.warning("Demand segmentation service unavailable")
+            except Exception:
+                st.warning("Demand segmentation request failed")
+
+    st.markdown("---")
+    if df is not None and not df.empty and "MonthYear" in df.columns and "Quantity_Sold" in df.columns:
+        st.markdown("### 📊 Forecast Insights & Charts")
+
+        # Metric cards
+        with st.container():
+            total = int(df["Quantity_Sold"].sum())
+            avg = float(df["Quantity_Sold"].mean())
+            max_month = df.groupby("MonthYear")["Quantity_Sold"].sum().idxmax()
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Total Historical Sold", f"{total:,}")
+            col2.metric("Average Monthly", f"{avg:,.2f}")
+            col3.metric("Top Month", max_month)
+
+        # Chart 1: Historical monthly trend
+        monthly = (
+            df.groupby("MonthYear")["Quantity_Sold"].sum().reset_index().sort_values("MonthYear")
+        )
+        monthly["MonthYear"] = pd.to_datetime(monthly["MonthYear"])
+        monthly = monthly.set_index("MonthYear")
+
+        st.write("#### 1) Historical Monthly Sales Trend")
+        st.line_chart(monthly["Quantity_Sold"])
+
+        # Chart 2: Seasonality by month
+        month_avg = df.groupby("Month")["Quantity_Sold"].mean().reindex(range(1, 13), fill_value=0)
+        st.write("#### 2) Average Sales by Month (Seasonality)")
+        st.bar_chart(month_avg)
+
+        # Chart 3: Predicted vs Historical (basic)
+        st.write("#### 3) Historical Yearly Sales")
+        agg = df.groupby("Year")["Quantity_Sold"].sum().reset_index()
+        if not agg.empty:
+            st.area_chart(agg.rename(columns={"Year": "index"}).set_index("index"))
+        else:
+            st.write("Not enough historical data for year-level chart.")
+
+        if st.session_state.get("sales_forecast_prediction"):
+            pred = st.session_state.sales_forecast_prediction
+            st.markdown("#### 4) Last Prediction Summary")
+            st.metric("Predicted Sales", f"{pred.get('predicted_sales', 0):,.2f}")
+            st.write(f"Insight: {pred.get('insight', 'N/A')}")
+            st.write(f"Average Sales: {pred.get('average_sales', 'N/A')}")
+
+    else:
+        st.info("Add a valid 'Date' and 'Quantity_Sold' column to 'data/raw/gear_sales_data.csv' for charts.")
+
+    st.markdown("---")
+    st.markdown("#### Connect to React Dashboard")
+    st.markdown("Use /api/forecast/train and /api/forecast/predict from your React UI. Build a line chart with monthly historical totals and predicted next month values for a unified dashboard.")
+
+
 # def generate_signal_plots(csv_path, rms, energy, rms_th, energy_th):
 #     img_dir = "data/reports/plots"
 #     os.makedirs(img_dir, exist_ok=True)
@@ -1061,8 +1328,19 @@ with st.sidebar:
     elif role == 'maintenance_head':
         nav_items.append(("⚙️ Gearbox Diagnosis", "Gearbox Diagnosis"))
     elif role == 'production_head':
-        # production heads only need the material request feature
-        nav_items.append(("📝 Material Request", "Material Request"))
+        # production heads get workload analyzer, material requests and forecasting
+        nav_items.extend([
+            ("⚙️ Workload Analyzer", "Workload Analyzer"),
+            ("📝 Material Request", "Material Request"),
+            ("📈 Market Sales Forecasting", "Market Sales Forecasting"),
+        ])
+    elif role == 'admin':
+        nav_items.extend([
+            ("🔧 Admin Panel", "Admin Panel"),
+            ("🧾 Pending Signups", "Admin Requests"),
+            ("👥 Manage Heads", "Manage Heads"),
+            ("📈 Market Sales Forecasting", "Market Sales Forecasting"),
+        ])
     elif role == 'scm_head':
         nav_items.extend([
             ("🛒 SCM Dashboard", "SCM Dashboard"),
@@ -1079,12 +1357,6 @@ with st.sidebar:
         nav_items.extend([
             ("📝 Purchase Requests", "Purchase Requests"),
             ("📦 Purchase Orders", "Purchase Orders"),
-        ])
-    elif role == 'admin':
-        nav_items.extend([
-            ("🔧 Admin Panel", "Admin Panel"),
-            ("🧾 Pending Signups", "Admin Requests"),
-            ("👥 Manage Heads", "Manage Heads"),
         ])
     else:
         # guest or unknown: show Home only
@@ -1146,6 +1418,12 @@ elif current == "Inventory":
 elif current == "Material Request":
     from scm_chain import display_production_requests
     display_production_requests()
+
+elif current == "Workload Analyzer":
+    display_workload_analyzer()
+
+elif current == "Market Sales Forecasting":
+    display_market_sales_forecast()
 
 elif current == "Notifications":
     from scm_chain import display_notifications
