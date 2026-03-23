@@ -1318,7 +1318,10 @@ with st.sidebar:
 
     # Role-based navigation
     if role == 'user':
-        nav_items.append(("💰 Price Prediction", "Price Prediction"))
+        nav_items.extend([
+            ("💰 Price Prediction", "Price Prediction"),
+            ("💵 Price Estimation", "Price Estimation"),
+        ])
     elif role == 'inventory_head':
         nav_items.extend([
             ("🖼️ Quality Detection", "Quality Detection"),
@@ -1391,6 +1394,19 @@ elif current == "Quality Detection":
 
 elif current == "Price Prediction":
     display_price_prediction()
+
+elif current == "Price Estimation":
+    from price_estimation_ui import main as price_estimation_main
+    # Check role access
+    if st.session_state.get('role') != 'user':
+        st.error("❌ Access Denied: Only users can access the Price Estimation module.")
+        st.stop()
+    # Pass token and role through session state for API calls
+    if 'token' not in st.session_state:
+        st.session_state.token = None
+    if 'user_role' not in st.session_state:
+        st.session_state.user_role = st.session_state.get('role')
+    price_estimation_main()
 
 elif current == "Gearbox Diagnosis":
     display_gearbox_diagnosis()

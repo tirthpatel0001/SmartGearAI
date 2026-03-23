@@ -27,8 +27,10 @@ def create_app(config_object: object = None):
 
     # Register blueprints
     from .routes import api_bp
+    from .modules.price_estimation.routes import price_estimation_bp
 
     app.register_blueprint(api_bp, url_prefix="/api")
+    app.register_blueprint(price_estimation_bp)
 
     # Try to ensure an admin user exists (best-effort; requires DB/tables exist)
     try:
@@ -43,7 +45,7 @@ def create_app(config_object: object = None):
             from sqlalchemy import inspect
 
             def _add_column_if_missing(table, column_sql):
-                insp_local = inspect(db.engine)  # fresh inspector each time
+                insp_local = inspect    (db.engine)  # fresh inspector each time
                 cols = [c['name'] for c in insp_local.get_columns(table)]
                 name = column_sql.split()[0]
                 if name not in cols:

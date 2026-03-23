@@ -7,3 +7,6 @@ gunicorn
 PyJWT
 werkzeug
 pandas
+scikit-learn>=1.0
+joblib>=1.1
+reportlab>=3.6
