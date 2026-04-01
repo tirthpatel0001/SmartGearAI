@@ -15,7 +15,11 @@ def _safe_rerun():
 
 def display_pending_requests():
     """Display pending signup requests for admin."""
-    st.markdown('<div class="admin-header"><h2>🧾 Pending Signup Requests</h2></div>', unsafe_allow_html=True)
+    st.markdown("""
+        <div style="background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%); color: white; padding: 24px; border-radius: 14px; margin-bottom: 20px; border-top: 4px solid #D97706; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);">
+            <h2 style="margin: 0; font-weight: 700; font-size: 1.4em; letter-spacing: -0.3px;">📋 Pending User Signup Requests</h2>
+        </div>
+    """, unsafe_allow_html=True)
 
     token = st.session_state.get('token')
     role = st.session_state.get('role', 'guest')

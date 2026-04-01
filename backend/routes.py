@@ -224,6 +224,38 @@ def admin_heads():
     } for u in heads])
 
 
+@api_bp.route('/admin/heads/<int:user_id>', methods=['DELETE'])
+def admin_delete_head(user_id):
+    """Delete a department head by converting role back to 'user'."""
+    admin_user = _require_admin_from_token()
+    if not admin_user or admin_user.role != 'admin':
+        return jsonify({'error': 'admin required'}), 403
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'user not found'}), 404
+
+    # Check if user is a head
+    roles_to_manage = [
+        'inventory_head',
+        'maintenance_head',
+        'production_head',
+        'scm_head',
+        'scm_planner',
+        'scm_purchaser',
+        'scm'
+    ]
+    
+    if user.role not in roles_to_manage:
+        return jsonify({'error': 'user is not a department head'}), 400
+
+    # Revert role to 'user'
+    user.role = 'user'
+    db.session.commit()
+    
+    return jsonify({'message': f'department head {user.email} removed successfully'}), 200
+
+
 @api_bp.route('/forecast/train', methods=['GET'])
 def forecast_train():
     try:
@@ -450,6 +482,7 @@ def create_material_request():
 
     # evaluate availability but do not alter inventory until later approval
     result = {'available': [], 'to_order': []}
+    saved_items = []
     for it in items:
         item_id = it.get('item_id')
         qty = it.get('quantity', 0)
@@ -473,8 +506,19 @@ def create_material_request():
             mr_item.quantity_allocated = 0
             mr_item.quantity_to_order = qty
             result['to_order'].append({'item_id': item_id, 'item_name': name, 'quantity': qty})
-        mr.items.append(mr_item)
-    db.session.commit()
+
+        # avoid lazy loading potentially corrupted collection query
+        db.session.add(mr_item)
+        saved_items.append(mr_item.as_dict())
+
+    try:
+        db.session.commit()
+    except Exception as exc:
+        from sqlalchemy.exc import OperationalError
+        db.session.rollback()
+        if isinstance(exc, OperationalError):
+            return jsonify({'error': 'database operational issue', 'detail': str(exc)}), 500
+        raise
 
     # AUTO-CREATE PURCHASE REQUESTS for items that need to be ordered
     if result.get('to_order'):
@@ -504,7 +548,18 @@ def create_material_request():
             db.session.add(n)
     db.session.commit()
 
-    return jsonify({'material_request': mr.as_dict(), 'result': result}), 201
+    material_request_data = {
+        'id': mr.id,
+        'department': mr.department,
+        'requested_by': mr.requested_by,
+        'status': mr.status,
+        'processed_by': mr.processed_by,
+        'processed_at': str(mr.processed_at) if mr.processed_at else None,
+        'created_at': str(mr.created_at),
+        'items': saved_items,
+    }
+
+    return jsonify({'material_request': material_request_data, 'result': result}), 201
 
 
 @api_bp.route('/material_requests/<int:req_id>/process', methods=['POST'])

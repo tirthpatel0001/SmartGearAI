@@ -34,7 +34,7 @@ def _safe_rerun():
 
 
 def display_inventory_management():
-    st.markdown('<div class="scm-header"><h2>📋 Inventory Management</h2></div>', unsafe_allow_html=True)
+    st.header("📦 Inventory Management System")
     role = st.session_state.get('role', 'guest')
     if role not in ['inventory_head', 'scm_head']:
         st.error('🔒 Only inventory heads or SCM heads can manage inventory here')

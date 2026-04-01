@@ -1,5 +1,5 @@
 import streamlit as st
-from api_client import admin_get_heads
+from api_client import admin_get_heads, admin_delete_head
 
 
 def _safe_rerun():
@@ -83,7 +83,7 @@ def display_manage_heads():
             if role_heads:
                 st.subheader(f"{role_info['icon']} {role_info['label']}")
                 for head in role_heads:
-                    col1, col2 = st.columns([4, 1])
+                    col1, col2, col3 = st.columns([3, 0.8, 0.6])
                     with col1:
                         status_badge = "✅ Approved" if head['is_approved'] else "⏳ Pending"
                         st.markdown(f"""
@@ -93,4 +93,21 @@ def display_manage_heads():
                         """)
                     with col2:
                         st.text(f"ID: {head['id']}")
+                    with col3:
+                        if st.button("🗑️ Delete", key=f"delete_head_{head['id']}", help="Remove this department head"):
+                            if st.session_state.get(f"confirm_delete_{head['id']}", False):
+                                # Confirmed - delete the head
+                                resp = admin_delete_head(token, head['id'])
+                                if resp.status_code == 200:
+                                    st.success(f"✅ Department head {head['email']} removed successfully")
+                                    st.session_state[f"confirm_delete_{head['id']}"] = False
+                                    _safe_rerun()
+                                else:
+                                    st.error(f"❌ Failed to delete head: {resp.text}")
+                                    st.session_state[f"confirm_delete_{head['id']}"] = False
+                            else:
+                                # First click - show confirmation
+                                st.session_state[f"confirm_delete_{head['id']}"] = True
+                                st.warning(f"⚠️ Click 'Delete' again to confirm removal of {head['email']}")
+                                _safe_rerun()
                 st.divider()

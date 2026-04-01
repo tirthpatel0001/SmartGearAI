@@ -96,6 +96,13 @@ class MaterialRequest(db.Model):
     items = db.relationship("MaterialRequestItem", backref="request", cascade="all, delete-orphan")
 
     def as_dict(self):
+        try:
+            items = [i.as_dict() for i in self.items]
+        except Exception:
+            # this can fail if child table is unavailable or corrupt;
+            # return safer fallback so API response still works for parent fields.
+            items = []
+
         return {
             "id": self.id,
             "department": self.department,
@@ -104,7 +111,7 @@ class MaterialRequest(db.Model):
             "processed_by": self.processed_by,
             "processed_at": str(self.processed_at) if self.processed_at else None,
             "created_at": str(self.created_at),
-            "items": [i.as_dict() for i in self.items],
+            "items": items,
         }
 
 

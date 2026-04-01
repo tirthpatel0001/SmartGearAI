@@ -17,73 +17,168 @@ st.set_page_config(
     menu_items=None
 )
 
-# Custom CSS for better styling
+# Custom CSS for ADVANCED modern styling
 st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700;800&display=swap');
+    
     :root {
-        --primary-color: #2E86AB;
-        --secondary-color: #A23B72;
-        --success-color: #06A77D;
-        --danger-color: #F18F01;
-        --light-bg: #F5F7FA;
+        --primary-dark: #1E3A5F;
+        --primary-steel: #2C5282;
+        --accent-orange: #D97706;
+        --success-green: #059669;
+        --danger-red: #DC2626;
+        --background: #F5F7FA;
         --card-bg: #FFFFFF;
-        --text-dark: #1a1a1a;
+        --text-primary: #111827;
+        --text-secondary: #6B7280;
+        --border-light: #E5E7EB;
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+        --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.12);
+    }
+    
+    * {
+        font-family: 'Inter', sans-serif;
     }
     
     .main {
-        background-color: var(--light-bg);
+        background-color: var(--background);
     }
     
     .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 20px;
-        border-radius: 12px;
-        margin: 10px 0;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+        color: var(--text-primary);
+        padding: 28px;
+        border-radius: 14px;
+        margin: 14px 0;
+        box-shadow: var(--shadow-md);
+        transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        border-top: 4px solid var(--accent-orange);
+        border: 1px solid rgba(229, 231, 235, 0.8);
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: var(--shadow-lg);
+        background: linear-gradient(135deg, #FFFFFF 0%, #F3F4F6 100%);
     }
     
     .success-card {
-        background: linear-gradient(135deg, #06A77D 0%, #048859 100%);
+        background: linear-gradient(135deg, var(--success-green) 0%, #047857 100%);
         color: white;
-        padding: 20px;
-        border-radius: 12px;
-        margin: 10px 0;
+        padding: 32px;
+        border-radius: 14px;
+        margin: 16px 0;
+        border-left: 5px solid #10B981;
+        box-shadow: 0 12px 24px rgba(5, 150, 105, 0.2);
+        transition: all 0.3s ease;
+        animation: scaleIn 0.5s ease-out;
+    }
+    
+    @keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    
+    .success-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 32px rgba(5, 150, 105, 0.3);
     }
     
     .header-container {
-        background: linear-gradient(135deg, #2E86AB 0%, #A23B72 100%);
+        background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 50%, #2C5282 100%);
         color: white;
-        padding: 30px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        padding: 50px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        border-top: 5px solid var(--accent-orange);
+        position: relative;
+        overflow: hidden;
+        animation: fadeInDown 0.6s ease-out;
+    }
+    
+    @keyframes fadeInDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .header-container::before {
+        content: '💹';
+        position: absolute;
+        top: -30px;
+        right: -30px;
+        font-size: 120px;
+        opacity: 0.08;
     }
     
     .header-container h1 {
         margin: 0;
-        font-size: 2.5em;
+        font-size: 3em;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        position: relative;
+        z-index: 1;
+        background: linear-gradient(135deg, #FFFFFF 0%, #FFE5CC 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
     
     .header-container p {
-        margin: 5px 0 0 0;
-        opacity: 0.9;
+        margin: 14px 0 0 0;
+        opacity: 0.95;
         font-size: 1.1em;
+        font-weight: 400;
+        position: relative;
+        z-index: 1;
     }
     
     .input-section {
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        margin: 15px 0;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+        padding: 32px;
+        border-radius: 14px;
+        margin: 20px 0;
+        box-shadow: var(--shadow-md);
+        border-top: 4px solid var(--primary-dark);
+        border: 1px solid rgba(229, 231, 235, 0.8);
+        transition: all 0.3s ease;
+    }
+    
+    .input-section:hover {
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .stButton > button {
+        background: linear-gradient(135deg, var(--accent-orange) 0%, #F59E0B 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 12px 32px !important;
+        font-weight: 700 !important;
+        font-size: 0.95em !important;
+        transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        box-shadow: 0 10px 25px rgba(217, 119, 6, 0.25) !important;
+        letter-spacing: 0.3px !important;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-4px) !important;
+        box-shadow: 0 15px 35px rgba(217, 119, 6, 0.35) !important;
+        background: linear-gradient(135deg, #B45309 0%, #D97706 100%) !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+        box-shadow: var(--shadow-md);
+        border-top: 3px solid var(--primary-dark);
     }
     
     .breakdown-table {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        background: var(--card-bg);
+        padding: 24px;
+        border-radius: 8px;
+        box-shadow: var(--shadow-md);
     }
     </style>
 """, unsafe_allow_html=True)

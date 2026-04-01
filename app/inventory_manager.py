@@ -22,7 +22,11 @@ def _safe_rerun():
 
 def display_approve_requests():
     """Display material requests that need inventory approval."""
-    st.markdown('<div class="scm-header"><h2>Approve Inventory Requests</h2></div>', unsafe_allow_html=True)
+    st.markdown("""
+        <div style="background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%); color: white; padding: 24px; border-radius: 8px; margin-bottom: 20px; border-top: 3px solid #D97706;">
+            <h2 style="margin: 0; font-weight: 600;">Inventory Request Approvals</h2>
+        </div>
+    """, unsafe_allow_html=True)
     
     role = st.session_state.get('role', 'guest')
     token = st.session_state.get('token')

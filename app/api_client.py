@@ -40,6 +40,12 @@ def admin_get_heads(token: str):
     return requests.get(f"{API_URL}/admin/heads", headers=headers)
 
 
+def admin_delete_head(token: str, user_id: int):
+    """Delete a department head (revert to user role)"""
+    headers = {"Authorization": f"Bearer {token}"}
+    return requests.delete(f"{API_URL}/admin/heads/{user_id}", headers=headers)
+
+
 # ---------------- SCM / inventory helpers ----------------
 
 def get_inventory_items(token: str):

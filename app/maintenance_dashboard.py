@@ -8,12 +8,8 @@ from src.pdf_generator.gearbox_report_pdf import generate_gearbox_pdf
 
 
 def display_gearbox_diagnosis():
-    st.markdown("""
-        <div class="hero-header" style="padding: 40px; margin-bottom: 30px;">
-            <h1>⚙️ Gearbox Diagnosis & Predictive Maintenance</h1>
-            <p>AI-Powered Signal Analysis with Cost, Parts, and Risk Insights</p>
-        </div>
-    """, unsafe_allow_html=True)
+    st.header("⚙️ Predictive Maintenance & Diagnosis")
+    st.write("AI-powered gearbox signal analysis with cost insights and maintenance recommendations")
 
     uploaded_file = st.file_uploader(
         "Upload Gearbox Vibration CSV File",

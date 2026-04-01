@@ -1,8 +1,11 @@
-from . import create_app
-
+from . import create_app, db   # 👈 add db import
 
 def main():
     app = create_app()
+
+    with app.app_context():
+        db.create_all()   # 👈 THIS LINE CREATES TABLES
+
     app.run(host="0.0.0.0", port=5000, debug=True)
 
 

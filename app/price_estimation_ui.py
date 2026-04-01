@@ -86,8 +86,12 @@ def main():
     
     check_access()
     
-    st.title("💰 Price Estimation Module")
-    st.markdown("---")
+    st.markdown("""
+        <div style="background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%); color: white; padding: 32px; border-radius: 8px; margin-bottom: 24px; border-top: 4px solid #D97706;">
+            <h1 style="margin: 0; font-size: 2.2em; font-weight: 700;">💰 Intelligent Price Estimation</h1>
+            <p style="margin: 8px 0 0 0; opacity: 0.95;">Calculate optimal gearbox prices based on specifications and market conditions</p>
+        </div>
+    """, unsafe_allow_html=True)
     
     # Create tabs
     tab1, tab2, tab3 = st.tabs(["Estimation", "Batch Estimation", "Help"])
@@ -95,11 +99,22 @@ def main():
     with tab1:
         st.subheader("Calculate Gear Price")
         
-        # Create columns for better layout
-        col1, col2, col3 = st.columns(3)
-        
         # BASIC SPECIFICATIONS
-        st.markdown("### 🔧 Basic Specifications")
+        st.markdown("""
+            <div style="
+                background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%);
+                color: white;
+                padding: 16px 20px;
+                border-radius: 12px;
+                margin: 20px 0 18px 0;
+                border-left: 5px solid #D97706;
+                font-weight: 700;
+                font-size: 1.15em;
+                letter-spacing: 0.3px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            ">🔧 Basic Specifications</div>
+        """, unsafe_allow_html=True)
+        
         basic_col1, basic_col2, basic_col3 = st.columns(3)
         
         with basic_col1:
@@ -124,7 +139,21 @@ def main():
             )
         
         # TECHNICAL SPECIFICATIONS
-        st.markdown("### ⚙️ Technical Specifications")
+        st.markdown("""
+            <div style="
+                background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%);
+                color: white;
+                padding: 16px 20px;
+                border-radius: 12px;
+                margin: 20px 0 18px 0;
+                border-left: 5px solid #D97706;
+                font-weight: 700;
+                font-size: 1.15em;
+                letter-spacing: 0.3px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            ">⚙️ Technical Specifications</div>
+        """, unsafe_allow_html=True)
+        
         tech_col1, tech_col2, tech_col3, tech_col4, tech_col5 = st.columns(5)
         
         with tech_col1:
@@ -178,7 +207,21 @@ def main():
             )
         
         # MATERIAL
-        st.markdown("### 🏭 Material")
+        st.markdown("""
+            <div style="
+                background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%);
+                color: white;
+                padding: 16px 20px;
+                border-radius: 12px;
+                margin: 20px 0 18px 0;
+                border-left: 5px solid #D97706;
+                font-weight: 700;
+                font-size: 1.15em;
+                letter-spacing: 0.3px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            ">🏭 Material</div>
+        """, unsafe_allow_html=True)
+        
         mat_col1, mat_col2 = st.columns(2)
         
         with mat_col1:
@@ -196,7 +239,21 @@ def main():
             )
         
         # MANUFACTURING
-        st.markdown("### 🔩 Manufacturing")
+        st.markdown("""
+            <div style="
+                background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%);
+                color: white;
+                padding: 16px 20px;
+                border-radius: 12px;
+                margin: 20px 0 18px 0;
+                border-left: 5px solid #D97706;
+                font-weight: 700;
+                font-size: 1.15em;
+                letter-spacing: 0.3px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            ">🔩 Manufacturing</div>
+        """, unsafe_allow_html=True)
+        
         mfg_col1, mfg_col2, mfg_col3 = st.columns(3)
         
         with mfg_col1:
